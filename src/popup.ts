@@ -7,14 +7,17 @@ popup.style.display = "none";
 document.body.appendChild(popup);
 
 // Function to show the popup
-export function showPopup(wonder: {
-  name: string;
-  description: string;
-  quote: string;
-  quoteAuthor: string;
-  wikipedia: string;
-  image: string;
-}) {
+export function showPopup(
+  wonder: {
+    name: string;
+    description: string;
+    quote: string;
+    quoteAuthor: string;
+    wikipedia: string;
+    image: string;
+  },
+  event: MouseEvent
+) {
   popup.innerHTML = `
       <div class="popup-content">
         <img src="${wonder.image}" alt="${wonder.name}" class="popup-image" />
@@ -28,6 +31,8 @@ export function showPopup(wonder: {
       <a href="${wonder.wikipedia}" target="_blank" class="more-info">More info...</a>
     `;
   popup.style.display = "block";
+  popup.style.left = `${event.clientX + 10}px`;
+  popup.style.top = `${event.clientY + 10}px`;
 }
 
 // Function to hide the popup

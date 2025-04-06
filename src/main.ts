@@ -15,6 +15,9 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.z = 3;
 
+let naturalWondersSprites: THREE.Sprite[] = [];
+let civilizationWondersSprites: THREE.Sprite[] = [];
+
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -45,13 +48,75 @@ loadGeoJSON("assets/json/world-geo.json").then((geoJSON) => {
 });
 
 // Load and plot wonders
+// Load and plot wonders
 Promise.all([
   loadWonders("assets/json/natural-wonders.json"),
   loadWonders("assets/json/civilization-wonders.json"),
 ]).then(([naturalWonders, civilizationWonders]) => {
-  plotWonders(naturalWonders, scene, camera);
-  plotWonders(civilizationWonders, scene, camera);
+  // Here you need to store the returned sprites
+  naturalWondersSprites = plotWonders(naturalWonders, scene);
+  civilizationWondersSprites = plotWonders(civilizationWonders, scene);
+  setupWonderClickHandler();
 });
+
+document
+  .getElementById("toggle-natural")
+  ?.addEventListener("change", (event) => {
+    const isChecked = (event.target as HTMLInputElement).checked;
+    naturalWondersSprites.forEach((sprite) => {
+      sprite.visible = isChecked;
+    });
+  });
+
+document
+  .getElementById("toggle-civilization")
+  ?.addEventListener("change", (event) => {
+    const isChecked = (event.target as HTMLInputElement).checked;
+    civilizationWondersSprites.forEach((sprite) => {
+      sprite.visible = isChecked;
+    });
+  });
+
+function setupWonderClickHandler() {
+  window.addEventListener("click", (event) => {
+    const mouse = new THREE.Vector2(
+      (event.clientX / window.innerWidth) * 2 - 1,
+      -(event.clientY / window.innerHeight) * 2 + 1
+    );
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+
+    // Check for intersections with all wonders
+    const allWonderSprites = [
+      ...naturalWondersSprites,
+      ...civilizationWondersSprites,
+    ];
+    const intersects = raycaster.intersectObjects(allWonderSprites, false);
+
+    if (intersects.length > 0) {
+      const intersectedObject = intersects[0].object as THREE.Sprite;
+
+      if (intersectedObject.userData) {
+        // Cast userData to expected type to satisfy TypeScript
+        const wonder = intersectedObject.userData as {
+          name: string;
+          description: string;
+          quote: string;
+          quoteAuthor: string;
+          wikipedia: string;
+          image: string;
+        };
+
+        showPopup(wonder, event);
+      } else {
+        hidePopup();
+      }
+    } else {
+      hidePopup();
+    }
+  });
+}
 
 // Responsive canvas
 window.addEventListener("resize", () => {
@@ -67,10 +132,10 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-// Hide popup when clicking elsewhere
 window.addEventListener("click", (event) => {
   if (!popup.contains(event.target as Node)) {
-    hidePopup();
+    // This is handled by the wonder click handler now
+    // We'll only hide if no wonder was clicked
   }
 });
 animate();
