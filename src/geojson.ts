@@ -80,3 +80,44 @@ function isPointInPolygon(point: number[], polygon: number[][]): boolean {
 
   return inside;
 }
+
+export function plotCountryNames(
+  geoJSON: any,
+  scene: THREE.Scene
+): THREE.Sprite[] {
+  const sprites: THREE.Sprite[] = [];
+
+  geoJSON.features.forEach((feature: any) => {
+    const name = feature.properties.name;
+    const coordinates =
+      feature.properties.center || feature.geometry.coordinates[0][0]; // Use center if available
+
+    const [lon, lat] = coordinates;
+    const position = latLonToVector3([lat, lon], 1.02);
+
+    // Create a canvas for the country name
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d")!;
+    canvas.width = 256;
+    canvas.height = 64;
+
+    context.fillStyle = "rgba(255, 255, 255, 0.8)";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "black";
+    context.font = "24px Arial";
+    context.textAlign = "center";
+    context.fillText(name, canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(spriteMaterial);
+
+    sprite.scale.set(0.2, 0.05, 1); // Adjust size
+    sprite.position.copy(position);
+
+    scene.add(sprite);
+    sprites.push(sprite);
+  });
+
+  return sprites;
+}

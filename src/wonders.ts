@@ -31,10 +31,10 @@ export function plotWonders(
     const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
     const sprite = new THREE.Sprite(spriteMaterial);
 
-    sprite.scale.set(0.05, 0.05, 1);
+    // Reduce the size of the wonder icons
+    sprite.scale.set(0.03, 0.03, 1);
     sprite.position.copy(position.clone().normalize().multiplyScalar(1.02));
 
-    // Ensure userData has all expected properties
     sprite.userData = {
       name: wonder.name,
       description: wonder.description || "No description available",

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { showPopup, hidePopup, popup } from "./popup";
-import { loadGeoJSON, plotCountries } from "./geojson";
+import { loadGeoJSON, plotCountries, plotCountryNames } from "./geojson";
 import { loadWonders, plotWonders } from "./wonders";
 import "./style.css";
 
@@ -17,6 +17,7 @@ camera.position.z = 3;
 
 let naturalWondersSprites: THREE.Sprite[] = [];
 let civilizationWondersSprites: THREE.Sprite[] = [];
+let countryNameSprites: THREE.Sprite[] = [];
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -45,6 +46,10 @@ controls.dampingFactor = 0.05;
 // Load GeoJSON and plot countries
 loadGeoJSON("assets/json/world-geo.json").then((geoJSON) => {
   plotCountries(geoJSON, scene);
+
+  // Plot country names but keep them hidden initially
+  countryNameSprites = plotCountryNames(geoJSON, scene);
+  countryNameSprites.forEach((sprite) => (sprite.visible = false));
 });
 
 // Load and plot wonders
@@ -77,8 +82,33 @@ document
     });
   });
 
+document
+  .getElementById("toggle-countries")
+  ?.addEventListener("change", (event) => {
+    const isChecked = (event.target as HTMLInputElement).checked;
+    countryNameSprites.forEach((sprite) => {
+      sprite.visible = isChecked;
+    });
+  });
+
 function setupWonderClickHandler() {
-  window.addEventListener("click", (event) => {
+  let isDragging = false;
+
+  // Detect mouse drag
+  window.addEventListener("mousedown", () => {
+    isDragging = false;
+  });
+
+  window.addEventListener("mousemove", () => {
+    isDragging = true;
+  });
+
+  window.addEventListener("mouseup", (event) => {
+    if (isDragging) {
+      isDragging = false; // Reset drag state
+      return; // Suppress popup on drag
+    }
+
     const mouse = new THREE.Vector2(
       (event.clientX / window.innerWidth) * 2 - 1,
       -(event.clientY / window.innerHeight) * 2 + 1
@@ -97,8 +127,8 @@ function setupWonderClickHandler() {
     if (intersects.length > 0) {
       const intersectedObject = intersects[0].object as THREE.Sprite;
 
-      if (intersectedObject.userData) {
-        // Cast userData to expected type to satisfy TypeScript
+      // Only show popup if the sprite is visible
+      if (intersectedObject.visible && intersectedObject.userData) {
         const wonder = intersectedObject.userData as {
           name: string;
           description: string;
